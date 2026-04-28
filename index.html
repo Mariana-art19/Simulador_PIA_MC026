@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PIA | Simulador de caída vertical</title>
+  <style>
+    :root{
+      --bg:#000;
+      --panel:rgba(16,16,20,.94);
+      --panel2:rgba(24,24,30,.98);
+      --line:rgba(255,255,255,.08);
+      --text:#f4f7fb;
+      --muted:#b8c3d4;
+      --accent:#7ce8ff;
+      --accent2:#b9ffd9;
+      --gold:#ffd86b;
+      --warn:#ff9b9b;
+      --ok:#8fffad;
+      --shadow:0 24px 72px rgba(0,0,0,.52);
+      --radius:24px;
+      --radius-sm:16px;
+      --radius-xl:30px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
+    body{
+      font-family:Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      padding:20px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(124,232,255,.10), transparent 24%),
+        radial-gradient(circle at 16% 8%, rgba(185,255,217,.08), transparent 18%),
+        radial-gradient(circle at 84% 8%, rgba(255,216,107,.06), transparent 16%),
+        #000;
+    }
+    .shell{max-width:1620px;margin:0 auto;display:grid;gap:18px}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+
+    .hero{
+      padding:24px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)),
+        radial-gradient(circle at 50% 110%, rgba(124,232,255,.10), transparent 30%);
+      position:relative;overflow:hidden;
+    }
+    .hero:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 110%, rgba(124,232,255,.08), transparent 34%)}
+    .hero-grid{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:start}
+    h1{margin:0;font-size:clamp(2rem,4vw,4.4rem);line-height:.92;letter-spacing:.06em}
+    .subtitle{margin:12px 0 0;color:var(--muted);line-height:1.72;font-size:1rem;max-width:82ch}
+    .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+    .chip{padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-size:.92rem;backdrop-filter:blur(10px)}
+    .chip b{color:var(--accent2)}
+
+    .eq-card{padding:18px;border-radius:20px;background:var(--panel2);border:1px solid rgba(255,255,255,.08)}
+    .eq-card h2,.section-title,.group-head{margin:0 0 12px;font-size:1.02rem;letter-spacing:.03em}
+    .equations{display:grid;gap:10px;color:#ecf4ff}
+    .equation{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:12px 14px;line-height:1.5}
+    .eq-block{display:grid;gap:5px}
+    .eq-line{font-size:.95rem}
+    .eq-explain{font-size:.86rem;color:var(--muted);line-height:1.45}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#a8e9ff}
+    .fraction{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 2px;min-width:24px}
+    .fraction .top,.fraction .bottom{padding:0 5px;line-height:1.12}
+    .fraction .bottom{border-top:1px solid rgba(255,255,255,.42);margin-top:2px}
+    .var-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:2px;font-size:.84rem;color:#dce7f6}
+    .var-item{padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);line-height:1.35}
+
+    .main-grid{display:grid;grid-template-columns:420px 1fr;gap:18px;align-items:start}
+    .controls{padding:18px;display:grid;gap:14px}
+    .group{padding:14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+    .group-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:800}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-size:.84rem;color:#edf6ff}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .field{display:grid;gap:6px}
+    label{font-size:.84rem;color:var(--muted)}
+    input{width:100%;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.76);color:var(--text);outline:none}
+    input:focus{border-color:rgba(124,232,255,.7);box-shadow:0 0 0 3px rgba(124,232,255,.12)}
+    .inline{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+    .units{color:var(--muted);font-size:.84rem;padding-bottom:10px}
+    .help{color:var(--muted);font-size:.81rem;line-height:1.45;margin-top:2px}
+    .buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    button{border:none;border-radius:14px;padding:12px 12px;cursor:pointer;font-weight:800;font-size:.95rem;letter-spacing:.01em;transition:transform .18s ease, box-shadow .18s ease, filter .18s ease}
+    button:hover{transform:translateY(-1px);filter:brightness(1.05)}
+    button:active{transform:translateY(0)}
+    .primary{background:linear-gradient(135deg,#7ce8ff,#b9ffd9);color:#06111c;box-shadow:0 10px 24px rgba(124,232,255,.16)}
+    .secondary{background:linear-gradient(135deg,#ffe7a2,#ffd86b);color:#141000;box-shadow:0 10px 24px rgba(255,216,107,.15)}
+    .ghost{background:rgba(255,255,255,.10);color:var(--text);border:1px solid rgba(255,255,255,.08)}
+    .danger{background:linear-gradient(135deg,#ffb8b8,#ff9b9b);color:#250707;box-shadow:0 10px 24px rgba(255,155,155,.14)}
+    .metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .metric{padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+    .metric .label{color:var(--muted);font-size:.84rem;margin-bottom:6px}
+    .metric .value{font-size:1.08rem;font-weight:800}
+    .metric .value small{color:var(--muted);font-size:.75rem;font-weight:600}
+    .status-ok{color:var(--ok);font-weight:800}
+    .status-warn{color:var(--gold);font-weight:800}
+
+    .scene-panel{display:grid;grid-template-rows:auto 1fr}
+    .scene-top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.07);background:linear-gradient(180deg, rgba(255,255,255,.04), transparent)}
+    .hint{color:var(--muted);font-size:.9rem;margin-top:3px}
+    #scene{width:100%;height:760px;display:block;background:#000}
+
+    .charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+    .chart-card{padding:16px}
+    .chart{width:100%;height:300px;display:block;background:rgba(0,0,0,.78);border-radius:18px;border:1px solid rgba(255,255,255,.07)}
+    .chart-note{margin-top:8px;font-size:.86rem;color:var(--muted);line-height:1.45}
+
+    .summary{display:grid;grid-template-columns:1.35fr .65fr;gap:18px}
+    .result-banner{padding:16px 18px;border-radius:20px;background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08)}
+    .result-title{margin:0 0 8px;font-size:1.05rem;font-weight:900}
+    .result-text{color:var(--muted);line-height:1.65;margin:0}
+    .result-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+    .result-grid .metric{background:rgba(255,255,255,.05)}
+    .impact-chip{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-size:.85rem;margin-top:10px}
+    .impact-chip.ok{color:var(--ok)}
+    .impact-chip.warn{color:var(--gold)}
+
+    .table-wrap{overflow:auto;max-height:330px;border-radius:18px;border:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.82)}
+    table{width:100%;border-collapse:collapse;font-size:.92rem}
+    th,td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap;text-align:left}
+    th{position:sticky;top:0;background:rgba(10,10,12,.98);color:var(--muted);z-index:2}
+    .footer-note{color:var(--muted);font-size:.9rem;line-height:1.6;padding:0 4px 2px}
+
+    .fade-in{animation:fadeIn .35s ease both}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    @media (max-width:1200px){
+      body{padding:16px}
+      .hero-grid,.main-grid,.charts-grid,.summary{grid-template-columns:1fr}
+      .buttons{grid-template-columns:repeat(2,1fr)}
+      #scene{height:620px}
+    }
+    @media (max-width:760px){
+      body{padding:12px}
+      .hero,.controls,.chart-card{padding:14px}
+      .grid-2,.metrics,.buttons,.result-grid,.var-grid{grid-template-columns:1fr}
+      h1{font-size:clamp(1.9rem,9vw,3rem)}
+      .chips{gap:8px}
+      .chip{padding:9px 12px;font-size:.88rem}
+      #scene{height:560px}
+      .chart{height:240px}
+      .scene-top{flex-direction:column;align-items:flex-start}
+      .pill{max-width:100%}
+    }
+    @media (max-width:480px){
+      .buttons{grid-template-columns:1fr}
+      .result-grid{grid-template-columns:1fr}
+      .inline{grid-template-columns:1fr}
+      .units{padding-bottom:0}
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <section class="panel hero fade-in">
+    <div class="hero-grid">
+      <div>
+        <h1>PIA MECANICA CLASICA</h1>
+        <p class="subtitle">
+          Simulador físico de una esfera metálica homogénea en caída vertical desde la estratosfera.
+          Usa altura <span class="mono">y</span>, gravedad variable, atmósfera estándar y arrastre cuadrático.
+        </p>
+        <div class="chips">
+          <span class="chip"><b>Inicio:</b> estratosfera</span>
+          <span class="chip"><b>Objeto:</b> esfera metálica</span>
+          <span class="chip"><b>Movimiento:</b> vertical</span>
+          <span class="chip"><b>Unidades:</b> SI</span>
+        </div>
+      </div>
+      <div class="eq-card">
+        <h2>Ecuaciones del modelo</h2>
+        <div class="equations">
+          <div class="equation eq-block">
+            <div class="eq-line mono"><b>A = πr²</b></div>
+            <div class="eq-explain">Área frontal. Si se conoce d, entonces r = d/2.</div>
+            <div class="var-grid">
+              <div class="var-item"><b>A</b>: área en m²</div>
+              <div class="var-item"><b>r</b>: radio en m</div>
+              <div class="var-item"><b>d</b>: diámetro en m</div>
+              <div class="var-item">Sirve para el arrastre.</div>
+            </div>
+          </div>
+          <div class="equation eq-block">
+            <div class="eq-line mono"><b>g(y) = g₀ · (R / (R + y))²</b></div>
+            <div class="eq-explain">La gravedad disminuye ligeramente al aumentar y.</div>
+            <div class="var-grid">
+              <div class="var-item"><b>g(y)</b>: gravedad local</div>
+              <div class="var-item"><b>g₀</b>: gravedad en superficie</div>
+              <div class="var-item"><b>R</b>: radio terrestre</div>
+              <div class="var-item"><b>y</b>: altura</div>
+            </div>
+          </div>
+          <div class="equation eq-block">
+            <div class="eq-line mono"><b>F<sub>D</sub> = 1/2 · ρ(y) · v² · C<sub>D</sub> · A</b></div>
+            <div class="eq-explain">Resistencia del aire proporcional al cuadrado de la velocidad.</div>
+            <div class="var-grid">
+              <div class="var-item"><b>F<sub>D</sub></b>: arrastre</div>
+              <div class="var-item"><b>ρ(y)</b>: densidad del aire</div>
+              <div class="var-item"><b>v</b>: rapidez</div>
+              <div class="var-item"><b>C<sub>D</sub></b>: coeficiente de arrastre</div>
+              <div class="var-item"><b>A</b>: área frontal</div>
+              <div class="var-item">El signo se maneja en la dinámica.</div>
+            </div>
+          </div>
+          <div class="equation eq-block">
+            <div class="eq-line mono">m · dv/dt = m · g(y) − F<sub>D</sub></div>
+            <div class="eq-line mono">dy/dt = −v</div>
+            <div class="eq-explain">Ecuación del movimiento vertical con arrastre.</div>
+            <div class="var-grid">
+              <div class="var-item"><b>m</b>: masa</div>
+              <div class="var-item"><b>dv/dt</b>: aceleración neta</div>
+              <div class="var-item"><b>dy/dt</b>: cambio de altura</div>
+              <div class="var-item">v positiva hacia abajo.</div>
+            </div>
+          </div>
+          <div class="equation eq-block">
+            <div class="eq-line mono"><b>a<sub>sonido</sub>(y) = √(γRT(y))</b></div>
+            <div class="eq-line mono"><b>Mach = v / a<sub>sonido</sub>(y)</b></div>
+            <div class="eq-explain">La velocidad del sonido cambia con la temperatura del aire, por eso se calcula en cada altura.</div>
+            <div class="var-grid">
+              <div class="var-item"><b>γ</b>: razón de calores</div>
+              <div class="var-item"><b>R</b>: constante del aire</div>
+              <div class="var-item"><b>T(y)</b>: temperatura local</div>
+              <div class="var-item"><b>Mach</b>: relación con el sonido</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="main-grid">
+    <aside class="panel controls fade-in">
+      <div class="group">
+        <div class="group-head"><span>Datos</span><span class="pill">Editar</span></div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="y0">Altura inicial y₀</label>
+            <div class="inline"><input id="y0" type="number" step="1" min="0" value="38000"><span class="units">m</span></div>
+          </div>
+          <div class="field">
+            <label for="m">Masa m</label>
+            <div class="inline"><input id="m" type="number" step="0.01" min="0.01" value="3"><span class="units">kg</span></div>
+          </div>
+          <div class="field">
+            <label for="d">Diámetro d</label>
+            <div class="inline"><input id="d" type="number" step="0.001" min="0.001" value="0.10"><span class="units">m</span></div>
+          </div>
+          <div class="field">
+            <label for="cd">Coeficiente C<sub>D</sub></label>
+            <div class="inline"><input id="cd" type="number" step="0.01" min="0.01" value="0.47"><span class="units">adim.</span></div>
+            <div class="help">Es una medida de qué tanto frena el aire a la esfera.</div>
+          </div>
+          <div class="field">
+            <label for="v0">Velocidad inicial v₀</label>
+            <div class="inline"><input id="v0" type="number" step="0.1" value="0"><span class="units">m/s</span></div>
+          </div>
+          <div class="field">
+            <label for="dt">Paso Δt</label>
+            <div class="inline"><input id="dt" type="number" step="0.001" min="0.001" value="0.01"><span class="units">s</span></div>
+            <div class="help">Menor Δt = más precisión; mayor Δt = menos detalle.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-head"><span>Condiciones</span><span class="pill">Tierra + atmósfera</span></div>
+        <div class="metrics">
+          <div class="metric"><div class="label">Área A</div><div class="value" id="areaVal">—</div><div class="help">Área frontal de la esfera.</div></div>
+          <div class="metric"><div class="label">ρ(y₀)</div><div class="value" id="rho0Val">—</div><div class="help">Densidad del aire al inicio.</div></div>
+          <div class="metric"><div class="label">g(y₀)</div><div class="value" id="g0Val">—</div><div class="help">Gravedad local al iniciar.</div></div>
+          <div class="metric"><div class="label">a sonido(y₀)</div><div class="value" id="sound0Val">—</div><div class="help">Se calcula con la temperatura local del aire.</div></div>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-head"><span>Tiempo real</span><span class="pill">Mach</span></div>
+        <div class="metrics">
+          <div class="metric"><div class="label">T(y)</div><div class="value" id="tempLive">— <small>K</small></div><div class="help">Temperatura local.</div></div>
+          <div class="metric"><div class="label">a sonido(y)</div><div class="value" id="soundLive">— <small>m/s</small></div><div class="help">Velocidad del sonido actual.</div></div>
+          <div class="metric"><div class="label">Mach actual</div><div class="value" id="machLive">— <small>Mach</small></div><div class="help">Rapidez dividida entre el sonido local.</div></div>
+          <div class="metric"><div class="label">Aceleración</div><div class="value" id="accLive">— <small>m/s²</small></div><div class="help">Gravedad menos arrastre.</div></div>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="primary" id="runBtn">Iniciar</button>
+        <button class="secondary" id="pauseBtn">Pausar</button>
+        <button class="ghost" id="resetBtn">Reiniciar</button>
+        <button class="danger" id="stepBtn">Paso</button>
+      </div>
+
+      <div class="group">
+        <div class="group-head"><span>Resultados</span><span id="statusText" class="status-ok">Listo</span></div>
+        <div class="metrics">
+          <div class="metric"><div class="label">Tiempo</div><div class="value" id="timeVal">0.00 <small>s</small></div></div>
+          <div class="metric"><div class="label">Velocidad impacto</div><div class="value" id="impactVVal">0.00 <small>m/s</small></div></div>
+          <div class="metric"><div class="label">Energía final</div><div class="value" id="keVal">0.00 <small>J</small></div></div>
+          <div class="metric"><div class="label">Mach máximo</div><div class="value" id="machVal">0.00 <small>Mach</small></div></div>
+          <div class="metric"><div class="label">Altura v máx.</div><div class="value" id="yMaxVVal">— <small>m</small></div></div>
+          <div class="metric"><div class="label">Velocidad máx.</div><div class="value" id="maxVVal">0.00 <small>m/s</small></div></div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="panel scene-panel fade-in">
+      <div class="scene-top">
+        <div>
+          <strong>Escena física</strong>
+          <div class="hint">Inicio de la atmósfera (0 km) → estratosfera → troposfera → superficie terrestre</div>
+        </div>
+        <div class="pill">Tiempo: <span id="sceneTime">0.00</span> s</div>
+      </div>
+      <svg id="scene" viewBox="0 0 1200 760" preserveAspectRatio="none" aria-label="Escena de la simulación"></svg>
+    </section>
+  </section>
+
+  <section class="charts-grid">
+    <article class="panel chart-card fade-in">
+      <div class="section-title">y(t)</div>
+      <svg id="chartY" class="chart" viewBox="0 0 700 300" preserveAspectRatio="none"></svg>
+      <div class="chart-note">La altura disminuye conforme avanza la caída.</div>
+    </article>
+    <article class="panel chart-card fade-in">
+      <div class="section-title">v(t)</div>
+      <svg id="chartV" class="chart" viewBox="0 0 700 300" preserveAspectRatio="none"></svg>
+      <div class="chart-note">Muestra la rapidez y su cambio por gravedad y arrastre.</div>
+    </article>
+    <article class="panel chart-card fade-in">
+      <div class="section-title">a(t)</div>
+      <svg id="chartA" class="chart" viewBox="0 0 700 300" preserveAspectRatio="none"></svg>
+      <div class="chart-note">Indica la aceleración neta del sistema.</div>
+    </article>
+    <article class="panel chart-card fade-in">
+      <div class="section-title">Mach(t)</div>
+      <svg id="chartM" class="chart" viewBox="0 0 700 300" preserveAspectRatio="none"></svg>
+      <div class="chart-note">Compara la rapidez con la velocidad local del sonido.</div>
+    </article>
+  </section>
+
+  <section class="panel chart-card summary fade-in">
+    <div class="result-banner">
+      <div class="result-title">Resultado final</div>
+      <p class="result-text" id="finalMessage">La simulación todavía no ha terminado. Al finalizar aparecerán el tiempo total, la velocidad de impacto, la velocidad máxima, la altura donde ocurrió y si alcanzó Mach 1.</p>
+      <div id="machChip" class="impact-chip warn">Aún no termina</div>
+      <div class="result-grid">
+        <div class="metric"><div class="label">Tiempo total</div><div class="value" id="finalTime">— <small>s</small></div></div>
+        <div class="metric"><div class="label">Mach 1</div><div class="value" id="finalMach1">—</div></div>
+        <div class="metric"><div class="label">Velocidad final</div><div class="value" id="finalVelocity">— <small>m/s</small></div></div>
+        <div class="metric"><div class="label">Energía final</div><div class="value" id="finalKE">— <small>J</small></div></div>
+        <div class="metric"><div class="label">Velocidad máx.</div><div class="value" id="finalVmax">— <small>m/s</small></div></div>
+        <div class="metric"><div class="label">Altura v máx.</div><div class="value" id="finalYmax">— <small>m</small></div></div>
+      </div>
+    </div>
+    <div class="result-banner">
+      <div class="result-title">Datos registrados</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>t (s)</th><th>y (m)</th><th>v (m/s)</th><th>a (m/s²)</th><th>ρ (kg/m³)</th><th>g(y) (m/s²)</th><th>Mach</th></tr>
+          </thead>
+          <tbody id="dataBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer-note">
+   Realizado por Grupo 026 Mecanica Clasica
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const E = {
+    y0: $('y0'), m: $('m'), d: $('d'), cd: $('cd'), v0: $('v0'), dt: $('dt'),
+    areaVal: $('areaVal'), rho0Val: $('rho0Val'), g0Val: $('g0Val'), sound0Val: $('sound0Val'),
+    tempLive: $('tempLive'), soundLive: $('soundLive'), machLive: $('machLive'), accLive: $('accLive'),
+    runBtn: $('runBtn'), pauseBtn: $('pauseBtn'), resetBtn: $('resetBtn'), stepBtn: $('stepBtn'),
+    timeVal: $('timeVal'), impactVVal: $('impactVVal'), keVal: $('keVal'), machVal: $('machVal'), yMaxVVal: $('yMaxVVal'), maxVVal: $('maxVVal'),
+    sceneTime: $('sceneTime'), statusText: $('statusText'), scene: $('scene'), chartY: $('chartY'), chartV: $('chartV'), chartA: $('chartA'), chartM: $('chartM'), dataBody: $('dataBody'),
+    finalMessage: $('finalMessage'), machChip: $('machChip'), finalTime: $('finalTime'), finalMach1: $('finalMach1'), finalVelocity: $('finalVelocity'), finalKE: $('finalKE'), finalVmax: $('finalVmax'), finalYmax: $('finalYmax')
+  };
+
+  const G0 = 9.80665;
+  const R_E = 6371000;
+  const R_AIR = 287.05;
+  const GAMMA = 1.4;
+  const SAMPLE_DT = 0.2;
+  const MAX_ROWS = 180;
+
+  let state = null, raf = null, last = 0, accumulator = 0;
+  const clamp = (n,a,b) => Math.max(a, Math.min(b, n));
+  const fmt = (n,d=2) => Number.isFinite(n) ? n.toFixed(d) : '—';
+
+  function area(d){ return Math.PI * (d / 2) ** 2; }
+  function gravity(y){ return G0 * (R_E / (R_E + Math.max(0, y))) ** 2; }
+  function temperature(y){
+    const h = Math.max(0, y);
+    if (h <= 11000) return 288.15 - 0.0065 * h;
+    if (h <= 20000) return 216.65;
+    if (h <= 32000) return 216.65 + 0.001 * (h - 20000);
+    if (h <= 47000) return 228.65 + 0.0028 * (h - 32000);
+    if (h <= 51000) return 270.65;
+    if (h <= 71000) return 270.65 - 0.0028 * (h - 51000);
+    return Math.max(186.65, 214.65 - 0.002 * (h - 71000));
+  }
+  function pressure(y){
+    const h = Math.max(0, y), g = G0;
+    if (h <= 11000){ const T = 288.15 - 0.0065*h; return 101325 * (T / 288.15) ** (g / (R_AIR * 0.0065)); }
+    if (h <= 20000) return 22632.06 * Math.exp(-g * (h - 11000) / (R_AIR * 216.65));
+    if (h <= 32000){ const T = 216.65 + 0.001*(h-20000); return 5474.889 * (T / 216.65) ** (-(g / (R_AIR * 0.001))); }
+    if (h <= 47000){ const T = 228.65 + 0.0028*(h-32000); return 868.019 * (T / 228.65) ** (-(g / (R_AIR * 0.0028))); }
+    if (h <= 51000) return 110.906 * Math.exp(-g * (h - 47000) / (R_AIR * 270.65));
+    if (h <= 71000){ const T = 270.65 - 0.0028*(h-51000); return 66.9389 * (T / 270.65) ** (-(g / (R_AIR * -0.0028))); }
+    const T = temperature(h); return 3.95642 * Math.exp(-g * (h - 71000) / (R_AIR * T));
+  }
+  function density(y){ return pressure(y) / (R_AIR * temperature(y)); }
+  function soundSpeed(y){ return Math.sqrt(GAMMA * R_AIR * temperature(y)); }
+
+  function params(){
+    return {
+      y0: Math.max(0, parseFloat(E.y0.value) || 0),
+      m: Math.max(0.001, parseFloat(E.m.value) || 0.001),
+      d: Math.max(0.0001, parseFloat(E.d.value) || 0.0001),
+      cd: Math.max(0.01, parseFloat(E.cd.value) || 0.01),
+      v0: parseFloat(E.v0.value) || 0,
+      dt: Math.max(0.001, parseFloat(E.dt.value) || 0.01)
+    };
+  }
+
+  function buildState(){
+    const p = params();
+    p.A = area(p.d);
+    const rho0 = density(p.y0), g0 = gravity(p.y0);
+    return {
+      p,
+      t:0,
+      y:p.y0,
+      v:p.v0,
+      a:g0 - 0.5 * rho0 * p.cd * p.A * p.v0 * Math.abs(p.v0) / p.m,
+      running:false,
+      finished:false,
+      impact:null,
+      maxSpeed:Math.abs(p.v0),
+      yAtMaxSpeed:p.y0,
+      maxMach:Math.abs(p.v0) / soundSpeed(p.y0),
+      samples:[],
+      lastSampleT:-Infinity
+    };
+  }
+
+  function deriv(y, v, p){
+    const g = gravity(y), rho = density(y);
+    const dragAcc = 0.5 * rho * p.cd * p.A * v * Math.abs(v) / p.m;
+    return { dy:-v, dv:g - dragAcc, a:g - dragAcc, g, rho, mach:Math.abs(v) / soundSpeed(y) };
+  }
+
+  function rk4(s, dt){
+    const p = s.p;
+    const k1 = deriv(s.y, s.v, p);
+    const k2 = deriv(s.y + 0.5*dt*k1.dy, s.v + 0.5*dt*k1.dv, p);
+    const k3 = deriv(s.y + 0.5*dt*k2.dy, s.v + 0.5*dt*k2.dv, p);
+    const k4 = deriv(s.y + dt*k3.dy, s.v + dt*k3.dv, p);
+    const yN = s.y + (dt/6) * (k1.dy + 2*k2.dy + 2*k3.dy + k4.dy);
+    const vN = s.v + (dt/6) * (k1.dv + 2*k2.dv + 2*k3.dv + k4.dv);
+    const next = deriv(yN, vN, p);
+    return { y:yN, v:vN, a:next.a };
+  }
+
+  function pushSample(force=false){
+    if (!state) return;
+    if (!force && state.t - state.lastSampleT < SAMPLE_DT) return;
+    state.lastSampleT = state.t;
+    const rho = density(state.y), g = gravity(state.y), mach = Math.abs(state.v) / soundSpeed(state.y);
+    state.samples.push({ t:state.t, y:state.y, v:state.v, a:state.a, rho, g, mach });
+    if (state.samples.length > 2500) state.samples.shift();
+    const sp = Math.abs(state.v);
+    if (sp >= state.maxSpeed) { state.maxSpeed = sp; state.yAtMaxSpeed = state.y; }
+    if (mach >= state.maxMach) state.maxMach = mach;
+  }
+
+  function showFinalSummary(reset=false){
+    if (reset){
+      E.finalMessage.textContent = 'La simulación todavía no ha terminado. Al finalizar aparecerán el tiempo total, la velocidad de impacto, la velocidad máxima, la altura donde ocurrió y si alcanzó Mach 1.';
+      E.finalTime.innerHTML = '— <small>s</small>';
+      E.finalMach1.textContent = '—';
+      E.finalVelocity.innerHTML = '— <small>m/s</small>';
+      E.finalKE.innerHTML = '— <small>J</small>';
+      E.finalVmax.innerHTML = '— <small>m/s</small>';
+      E.finalYmax.innerHTML = '— <small>m</small>';
+      E.machChip.textContent = 'Aún no termina';
+      E.machChip.className = 'impact-chip warn';
+      return;
+    }
+    const reached = state.maxMach >= 1;
+    E.finalTime.innerHTML = `${fmt(state.impact.t,2)} <small>s</small>`;
+    E.finalMach1.textContent = reached ? 'Sí' : 'No';
+    E.finalVelocity.innerHTML = `${fmt(Math.abs(state.impact.v),2)} <small>m/s</small>`;
+    E.finalKE.innerHTML = `${fmt(state.impact.ke,2)} <small>J</small>`;
+    E.finalVmax.innerHTML = `${fmt(state.maxSpeed,2)} <small>m/s</small>`;
+    E.finalYmax.innerHTML = `${fmt(state.yAtMaxSpeed,0)} <small>m</small>`;
+    E.finalMessage.textContent = reached
+      ? `La esfera sí alcanzó Mach 1. La velocidad máxima registrada fue ${fmt(state.maxSpeed,2)} m/s a ${fmt(state.yAtMaxSpeed,0)} m de altura.`
+      : `La esfera no alcanzó Mach 1. La velocidad máxima registrada fue ${fmt(state.maxSpeed,2)} m/s a ${fmt(state.yAtMaxSpeed,0)} m de altura.`;
+    E.machChip.textContent = reached ? 'Sí alcanzó Mach 1' : 'No alcanzó Mach 1';
+    E.machChip.className = reached ? 'impact-chip ok' : 'impact-chip warn';
+  }
+
+  function finishImpact(prev, next){
+    const frac = prev.y <= 0 ? 1 : clamp(prev.y / (prev.y - next.y), 0, 1);
+    const impactT = prev.t + frac * (next.t - prev.t);
+    const impactV = prev.v + frac * (next.v - prev.v);
+    const impactA = gravity(0) - 0.5 * density(0) * state.p.cd * state.p.A * impactV * Math.abs(impactV) / state.p.m;
+    state.t = impactT;
+    state.y = 0;
+    state.v = impactV;
+    state.a = impactA;
+    state.finished = true;
+    state.running = false;
+    state.impact = { t:impactT, v:impactV, ke:0.5 * state.p.m * impactV * impactV, mach:Math.abs(impactV) / soundSpeed(0) };
+    pushSample(true);
+    showFinalSummary(false);
+    setStatus('Impacto alcanzado','status-warn');
+  }
+
+  function step(dt){
+    if (!state || state.finished) return;
+    const prev = { t:state.t, y:state.y, v:state.v };
+    const next = rk4(state, dt);
+    state.t += dt;
+    state.y = next.y;
+    state.v = next.v;
+    state.a = next.a;
+    pushSample();
+    if (state.y <= 0) finishImpact(prev, { t:state.t, y:state.y, v:state.v });
+  }
+
+  function setStatus(text, cls){ E.statusText.textContent = text; E.statusText.className = cls; }
+  function reset(){ state = buildState(); accumulator = 0; showFinalSummary(true); renderAll(); setStatus('Listo','status-ok'); }
+  function start(){ if (!state) reset(); if (state.finished) return; state.running = true; setStatus('En ejecución','status-ok'); last = performance.now(); if (raf) cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); }
+  function pause(){ if (!state) return; state.running = false; if (raf) cancelAnimationFrame(raf); raf = null; if (!state.finished) setStatus('Pausado','status-warn'); }
+  function stepOnce(){ if (!state) reset(); pause(); step(params().dt); renderAll(); }
+  function loop(now){
+    if (!state || !state.running) return;
+    const frame = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    accumulator += frame;
+    const dt = state.p.dt;
+    let guard = 0;
+    while (accumulator >= dt && !state.finished && guard < 60) { step(dt); accumulator -= dt; guard++; }
+    renderAll();
+    if (state.running && !state.finished) raf = requestAnimationFrame(loop);
+  }
+
+  function renderSummaryBoxes(){
+    const p = state.p;
+    E.areaVal.textContent = `${fmt(p.A,5)} m²`;
+    E.rho0Val.textContent = `${fmt(density(p.y0),5)} kg/m³`;
+    E.g0Val.textContent = `${fmt(gravity(p.y0),4)} m/s²`;
+    E.sound0Val.textContent = `${fmt(soundSpeed(p.y0),2)} m/s`;
+    E.timeVal.innerHTML = `${fmt(state.t,2)} <small>s</small>`;
+    const impactV = state.finished ? state.impact.v : state.v;
+    E.impactVVal.innerHTML = `${fmt(impactV,2)} <small>m/s</small>`;
+    const ke = state.finished ? state.impact.ke : 0.5 * p.m * state.v * state.v;
+    E.keVal.innerHTML = `${fmt(ke,2)} <small>J</small>`;
+    const machLive = Math.abs(state.v) / soundSpeed(Math.max(0,state.y));
+    E.machVal.innerHTML = `${fmt(Math.max(state.maxMach, machLive),2)} <small>Mach</small>`;
+    E.yMaxVVal.innerHTML = `${fmt(state.yAtMaxSpeed,0)} <small>m</small>`;
+    E.maxVVal.innerHTML = `${fmt(state.maxSpeed,2)} <small>m/s</small>`;
+    E.sceneTime.textContent = fmt(state.t,2);
+
+    const tNow = temperature(Math.max(0, state.y));
+    const aNow = soundSpeed(Math.max(0, state.y));
+    const machNow = aNow > 0 ? Math.abs(state.v) / aNow : 0;
+    E.tempLive.innerHTML = `${fmt(tNow,1)} <small>K</small>`;
+    E.soundLive.innerHTML = `${fmt(aNow,2)} <small>m/s</small>`;
+    E.machLive.innerHTML = `${fmt(machNow,3)} <small>Mach</small>`;
+    E.accLive.innerHTML = `${fmt(state.a,3)} <small>m/s²</small>`;
+  }
+
+  function clearSvg(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+  function el(tag, attrs={}){ const n = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const [k,v] of Object.entries(attrs)) n.setAttribute(k,v); return n; }
+  function addText(svg, x, y, text, opts={}){ const t = el('text',{ x, y, fill: opts.fill || '#fff', 'font-size': opts.size || 14, 'font-weight': opts.weight || 700, 'font-family': 'Inter, Segoe UI, Arial' }); t.textContent = text; svg.appendChild(t); return t; }
+  function map(v, inMin, inMax, outMin, outMax){ if (inMax === inMin) return (outMin + outMax) / 2; return outMin + ((v - inMin) / (inMax - inMin)) * (outMax - outMin); }
+
+  function renderScene(){
+    const svg = E.scene; clearSvg(svg);
+    const W = 1200, H = 760;
+    const y0 = state ? state.p.y0 : 38000;
+    const y = state ? state.y : y0;
+    const v = state ? Math.abs(state.v) : 0;
+    const mach = state ? Math.abs(state.v) / soundSpeed(Math.max(0,state.y)) : 0;
+    const rhoNow = state ? density(Math.max(0,state.y)) : density(y0);
+    const gNow = state ? gravity(Math.max(0,state.y)) : gravity(y0);
+    const sphereX = 610;
+    const sphereY = map(y, 0, y0, H - 135, 130);
+    const r = 24;
+
+    const defs = el('defs');
+    defs.innerHTML = `
+      <linearGradient id="spaceBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#000"/><stop offset="58%" stop-color="#050815"/><stop offset="100%" stop-color="#0a1324"/></linearGradient>
+      <radialGradient id="earthGlow" cx="50%" cy="79%" r="55%"><stop offset="0%" stop-color="rgba(88,190,255,.42)"/><stop offset="50%" stop-color="rgba(52,126,202,.20)"/><stop offset="100%" stop-color="rgba(0,0,0,0)"/></radialGradient>
+      <radialGradient id="planet" cx="38%" cy="32%" r="72%"><stop offset="0%" stop-color="#34c8ff"/><stop offset="25%" stop-color="#1f90e0"/><stop offset="54%" stop-color="#0d5a92"/><stop offset="100%" stop-color="#06233a"/></radialGradient>
+      <radialGradient id="sphereMetal" cx="35%" cy="32%" r="72%"><stop offset="0%" stop-color="#fff"/><stop offset="17%" stop-color="#edf4ff"/><stop offset="38%" stop-color="#aab7c6"/><stop offset="70%" stop-color="#4e5964"/><stop offset="100%" stop-color="#171b22"/></radialGradient>
+      <filter id="softBlur"><feGaussianBlur stdDeviation="6"/></filter>
+      <filter id="sphereGlow"><feGaussianBlur stdDeviation="10"/></filter>
+    `;
+    svg.appendChild(defs);
+    svg.appendChild(el('rect',{ x:0, y:0, width:W, height:H, fill:'url(#spaceBg)' }));
+
+    for(let i=0;i<480;i++){
+      const x = (i * 97) % W;
+      const yS = ((i * 173) % 1000) / 1000 * H * 0.38;
+      const rr = 0.35 + ((i * 37) % 24) / 24 * 1.9;
+      const op = 0.30 + ((i * 53) % 100) / 100 * 0.65;
+      svg.appendChild(el('circle',{ cx:x, cy:yS, r:rr, fill:i % 11 === 0 ? '#dff4ff' : '#fff', opacity:op }));
+    }
+    svg.appendChild(el('ellipse',{ cx:980, cy:150, rx:180, ry:80, fill:'rgba(124,232,255,.05)', filter:'url(#softBlur)' }));
+    svg.appendChild(el('ellipse',{ cx:210, cy:120, rx:140, ry:66, fill:'rgba(185,255,217,.04)', filter:'url(#softBlur)' }));
+
+    svg.appendChild(el('ellipse',{ cx:600, cy:1008, rx:900, ry:410, fill:'url(#planet)' }));
+    svg.appendChild(el('ellipse',{ cx:600, cy:558, rx:840, ry:300, fill:'url(#earthGlow)' }));
+    svg.appendChild(el('path',{ d:'M0 612 Q600 560 1200 612 L1200 760 L0 760 Z', fill:'#01070d' }));
+    svg.appendChild(el('path',{ d:'M0 611 Q600 556 1200 611', stroke:'rgba(175,232,255,.16)', 'stroke-width':2, fill:'none' }));
+    svg.appendChild(el('path',{ d:'M0 602 Q600 548 1200 602', stroke:'rgba(255,255,255,.06)', 'stroke-width':1.4, fill:'none' }));
+
+    const continents = [
+      'M140 644 C220 620, 260 600, 340 608 C380 612, 420 640, 472 646 C420 660, 360 670, 300 670 C240 669, 190 660, 140 644 Z',
+      'M520 628 C560 610, 610 602, 670 610 C720 618, 755 638, 800 648 C745 661, 690 668, 640 667 C590 666, 545 654, 520 628 Z',
+      'M820 628 C860 610, 920 600, 1000 615 C1045 623, 1080 645, 1135 652 C1080 668, 1025 672, 960 668 C900 664, 860 650, 820 628 Z'
+    ];
+    continents.forEach((d, idx) => svg.appendChild(el('path',{ d, fill: idx===0 ? '#1b6b4d' : idx===1 ? '#246b45' : '#2b7b52', opacity:.96 })));
+    svg.appendChild(el('path',{ d:'M0 620 Q240 600 420 620 T840 620 T1200 620', stroke:'rgba(255,255,255,.07)', 'stroke-width':3, fill:'none' }));
+    svg.appendChild(el('path',{ d:'M0 640 Q280 620 520 640 T1000 640 T1200 640', stroke:'rgba(255,255,255,.04)', 'stroke-width':2, fill:'none' }));
+
+    const layers=[{y1:80,y2:170,c:'rgba(255,255,255,0.03)'},{y1:170,y2:310,c:'rgba(124,232,255,0.05)'},{y1:310,y2:500,c:'rgba(124,232,255,0.07)'},{y1:500,y2:642,c:'rgba(124,232,255,0.10)'}];
+    layers.forEach(L=>svg.appendChild(el('rect',{ x:0, y:L.y1, width:W, height:L.y2-L.y1, fill:L.c })));
+
+    const zeroY = map(0,0,38,H-126,132);
+    svg.appendChild(el('line',{ x1:0, y1:zeroY, x2:W, y2:zeroY, stroke:'rgba(124,232,255,.18)', 'stroke-width':2 }));
+    svg.appendChild(el('line',{ x1:0, y1:zeroY+1, x2:W, y2:zeroY+1, stroke:'rgba(255,255,255,.04)', 'stroke-width':1 }));
+    addText(svg, 18, zeroY - 10, 'Inicio de la atmósfera / nivel del mar (0 km)', { size: 14, fill: '#dff4ff', weight: 800 });
+
+    [0,10,20,30,38].forEach(km=>{ const yy = map(km,0,38,H-126,132); svg.appendChild(el('line',{ x1:22, y1:yy, x2:48, y2:yy, stroke:'rgba(255,255,255,.30)', 'stroke-width':1.5 })); addText(svg, 56, yy+4, `${km} km`, { size:12, fill:'#dfe8f6', weight:700 }); });
+    addText(svg, 18, 54, 'Estratosfera', { size:18, fill:'#f4f8ff', weight:800 });
+    addText(svg, 18, 586, 'Troposfera', { size:18, fill:'#f4f8ff', weight:800 });
+    addText(svg, 18, 748, 'Superficie terrestre', { size:16, fill:'#f4f8ff', weight:800 });
+
+    const info = el('rect',{ x:830, y:145, width:342, height:210, rx:18, fill:'rgba(0,0,0,.46)', stroke:'rgba(255,255,255,.08)' });
+    svg.appendChild(info);
+    addText(svg, 850, 173, 'Estado de la esfera', { size:15, fill:'#f4f8ff', weight:800 });
+    addText(svg, 850, 199, `y = ${fmt(Math.max(0,y),0)} m`, { size:13, fill:'#d7f2ff', weight:700 });
+    addText(svg, 850, 221, `v = ${fmt(v,2)} m/s`, { size:13, fill:'#d7f2ff', weight:700 });
+    addText(svg, 850, 243, `Mach = ${fmt(mach,3)}`, { size:13, fill:'#d7f2ff', weight:700 });
+    addText(svg, 850, 265, `ρ = ${fmt(rhoNow,5)} kg/m³`, { size:13, fill:'#d7f2ff', weight:700 });
+    addText(svg, 850, 287, `g(y) = ${fmt(gNow,4)} m/s²`, { size:13, fill:'#d7f2ff', weight:700 });
+    addText(svg, 850, 309, `t = ${fmt(state ? state.t : 0,2)} s`, { size:13, fill:'#d7f2ff', weight:700 });
+    addText(svg, 850, 331, `a = ${fmt(state ? state.a : 0,3)} m/s²`, { size:13, fill:'#d7f2ff', weight:700 });
+
+    svg.appendChild(el('line',{ x1:sphereX, y1:100, x2:sphereX, y2:H-140, stroke:'rgba(175,232,255,.22)', 'stroke-width':2, 'stroke-dasharray':'10 12' }));
+    const capBox = el('rect',{ x:sphereX - 92, y:78, width:184, height:30, rx:10, fill:'rgba(0,0,0,.52)', stroke:'rgba(255,255,255,.10)' });
+    svg.appendChild(capBox);
+    addText(svg, sphereX - 76, 98, 'Cápsula científica', { size:14, fill:'#f4f8ff', weight:800 });
+
+    const trailCount = clamp(Math.round(7 + v / 40), 6, 22);
+    for(let i=0;i<trailCount;i++){ const t = i / trailCount; svg.appendChild(el('circle',{ cx:sphereX, cy:sphereY - i*8, r:r*(0.44 - t*0.02), fill:`rgba(124,232,255,${0.20 * (1 - t)})` })); }
+    const glowOpacity = clamp((rhoNow * 1000) * (v / 250) * 0.03, 0.0, 0.55);
+    svg.appendChild(el('circle',{ cx:sphereX, cy:sphereY, r:r*1.8, fill:`rgba(124,232,255,${glowOpacity})`, filter:'url(#sphereGlow)' }));
+    if (state && state.finished){ svg.appendChild(el('ellipse',{ cx:sphereX, cy:H-108, rx:90, ry:20, fill:'rgba(255,255,255,.16)', filter:'url(#softBlur)' })); svg.appendChild(el('ellipse',{ cx:sphereX, cy:H-110, rx:40, ry:9, fill:'rgba(255,255,255,.22)' })); }
+    svg.appendChild(el('circle',{ cx:sphereX, cy:sphereY, r:r, fill:'url(#sphereMetal)', stroke:'rgba(255,255,255,.20)', 'stroke-width':1.4 }));
+    svg.appendChild(el('circle',{ cx:sphereX - 7, cy:sphereY - 8, r:r * 0.34, fill:'rgba(255,255,255,.25)' }));
+    const sphereLabelY = sphereY - 44;
+    svg.appendChild(el('rect',{ x:sphereX + 18, y:sphereLabelY - 18, width:250, height:44, rx:12, fill:'rgba(0,0,0,.50)', stroke:'rgba(255,255,255,.10)' }));
+    addText(svg, sphereX + 30, sphereLabelY + 1, state && state.finished ? 'Impacto en la superficie' : 'Esfera metálica homogénea', { size:14, fill:'#f4f8ff', weight:800 });
+    addText(svg, sphereX + 30, sphereLabelY + 20, `Tiempo: ${fmt(state ? state.t : 0,2)} s`, { size:12, fill:'#d7f2ff', weight:700 });
+    svg.appendChild(el('rect',{ x:0, y:560, width:W, height:18, fill:'rgba(124,232,255,.05)' }));
+  }
+
+  function renderChart(svg, data, accessor, cfg){
+    clearSvg(svg);
+    const W=700,H=300,m={l:58,r:16,t:20,b:44},iw=W-m.l-m.r,ih=H-m.t-m.b;
+    const arr = data.length ? data : [{ t:0, y:cfg.placeholderY || 0, v:0, a:0, mach:0 }];
+    const xmax = Math.max(1, arr[arr.length - 1].t || 1);
+    const vals = arr.map(accessor);
+    let ymin = cfg.yMin !== undefined ? cfg.yMin : Math.min(...vals);
+    let ymax = cfg.yMax !== undefined ? cfg.yMax : Math.max(...vals);
+    if (ymin === ymax) { ymin -= 1; ymax += 1; }
+    const pad = (ymax - ymin) * 0.08 || 1; ymin -= pad; ymax += pad;
+    svg.appendChild(el('rect',{ x:0, y:0, width:W, height:H, fill:'rgba(255,255,255,.01)' }));
+    svg.appendChild(el('rect',{ x:m.l, y:m.t, width:iw, height:ih, rx:12, fill:'rgba(255,255,255,.02)' }));
+    for(let i=0;i<=5;i++){ const yy = m.t + ih * i/5; svg.appendChild(el('line',{ x1:m.l, y1:yy, x2:m.l+iw, y2:yy, stroke:'rgba(255,255,255,.08)', 'stroke-width':1 })); const val = ymax - (ymax - ymin) * i/5; addText(svg,10,yy+4,fmt(val,cfg.yDigits || 1),{size:11,fill:'#b9c3d5',weight:700}); }
+    for(let i=0;i<=6;i++){ const xx = m.l + iw * i/6; svg.appendChild(el('line',{ x1:xx, y1:m.t, x2:xx, y2:m.t+ih, stroke:'rgba(255,255,255,.06)', 'stroke-width':1 })); addText(svg,xx-8,H-16,fmt(xmax*i/6,1),{size:11,fill:'#b9c3d5',weight:700}); }
+    const xs = t => m.l + (t / xmax) * iw, ys = v => m.t + ih - ((v - ymin) / (ymax - ymin)) * ih;
+    let path=''; arr.forEach((p,i)=>{ const X=xs(p.t),Y=ys(accessor(p)); path += (i===0 ? `M ${X} ${Y}` : ` L ${X} ${Y}`); });
+    svg.appendChild(el('path',{ d:path, fill:'none', stroke:cfg.color, 'stroke-width':3.2, 'stroke-linecap':'round', 'stroke-linejoin':'round' }));
+    const last = arr[arr.length - 1];
+    svg.appendChild(el('circle',{ cx:xs(last.t), cy:ys(accessor(last)), r:4.2, fill:cfg.color }));
+    addText(svg, m.l, 16, cfg.title, { size:13, fill:'#f4f8ff', weight:800 });
+  }
+
+  function renderTable(){
+    const rows = state.samples.slice(-MAX_ROWS).reverse();
+    E.dataBody.innerHTML = rows.map(s => `<tr><td>${fmt(s.t,2)}</td><td>${fmt(s.y,1)}</td><td>${fmt(s.v,2)}</td><td>${fmt(s.a,3)}</td><td>${fmt(s.rho,5)}</td><td>${fmt(s.g,4)}</td><td>${fmt(s.mach,3)}</td></tr>`).join('');
+  }
+
+  function renderAll(){
+    if (!state) return;
+    renderSummaryBoxes();
+    renderTable();
+    renderScene();
+    renderChart(E.chartY, state.samples, d => d.y, { title:'y(t) en metros', color:'#7ce8ff', yDigits:0, yMin:0, placeholderY:state.p.y0 });
+    renderChart(E.chartV, state.samples, d => Math.abs(d.v), { title:'v(t) en m/s', color:'#b9ffd9', yDigits:0, yMin:0, placeholderY:0 });
+    renderChart(E.chartA, state.samples, d => d.a, { title:'a(t) en m/s²', color:'#ffd86b', yDigits:2, placeholderY:gravity(state.p.y0) });
+    renderChart(E.chartM, state.samples, d => d.mach, { title:'Mach(t)', color:'#ff9b9b', yDigits:2, yMin:0, placeholderY:0 });
+  }
+
+  function attach(){
+    [E.y0,E.m,E.d,E.cd,E.v0,E.dt].forEach(inp => inp.addEventListener('input', () => {
+      const keep = state && state.running && !state.finished;
+      state = buildState();
+      showFinalSummary(true);
+      renderAll();
+      if (keep) start();
+    }));
+    E.runBtn.addEventListener('click', start);
+    E.pauseBtn.addEventListener('click', pause);
+    E.resetBtn.addEventListener('click', () => { pause(); reset(); });
+    E.stepBtn.addEventListener('click', stepOnce);
+    window.addEventListener('resize', renderAll);
+  }
+
+  attach();
+  reset();
+})();
+</script>
+</body>
+</html>
